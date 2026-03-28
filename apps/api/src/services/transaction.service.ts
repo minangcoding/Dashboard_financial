@@ -1,6 +1,6 @@
 import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
-import { db } from "../db";
-import { transactions, categories } from "../db/schema";
+import { db } from "../db/index.js";
+import { transactions, categories } from "../db/schema.js";
 import { v4 as uuidv4 } from 'uuid';
 
 export class TransactionService {
@@ -38,14 +38,12 @@ export class TransactionService {
     .where(and(...conditions))
     .orderBy(desc(transactions.date));
 
-    // Pagination
     const page = parseInt(filters.page || "1");
     const limit = parseInt(filters.limit || "10");
     const offset = (page - 1) * limit;
 
     const data = await query.limit(limit).offset(offset);
     
-    // Count Total (simpel untuk MVP)
     const countQuery = await db.select({ total: sql`count(*)`.mapWith(Number) })
       .from(transactions)
       .where(and(...conditions));
@@ -89,9 +87,9 @@ export class TransactionService {
       date: new Date(payload.date),
       description: payload.description,
       subDescription: payload.subDescription || null,
-      type: payload.type,
+      type: payload.type as any,
       amount: payload.amount,
-    }).returning();
+    } as any).returning();
     return newTrx;
   }
 
@@ -103,8 +101,8 @@ export class TransactionService {
     if (payload.date) updatePayload.date = new Date(payload.date);
 
     const [updated] = await db.update(transactions)
-      .set(updatePayload)
-      .where(eq(transactions.id, transactionId))
+      .set(updatePayload as any)
+      .where(and(eq(transactions.id, transactionId), eq(transactions.userId, userId)))
       .returning();
     return updated;
   }
@@ -113,7 +111,7 @@ export class TransactionService {
     const trx = await this.getById(userId, transactionId);
     if (!trx) throw new Error("Transaction not found or access denied");
 
-    await db.delete(transactions).where(eq(transactions.id, transactionId));
+    await db.delete(transactions).where(and(eq(transactions.id, transactionId), eq(transactions.userId, userId)));
     return { success: true };
   }
 }

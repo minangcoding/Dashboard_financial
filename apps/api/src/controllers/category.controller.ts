@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CategoryService } from "../services/category.service";
+import { CategoryService } from "../services/category.service.js";
 
 const service = new CategoryService();
 
@@ -33,7 +33,7 @@ export class CategoryController {
   async update(req: Request, res: Response) {
     try {
       const userId = (req as any).user.id;
-      const { id } = req.params;
+      const id = req.params.id as string; // PERBAIKAN: Cast ke string
       const payload = req.body;
 
       const data = await service.update(userId, id, payload);
@@ -46,7 +46,7 @@ export class CategoryController {
   async delete(req: Request, res: Response) {
     try {
       const userId = (req as any).user.id;
-      const { id } = req.params;
+      const id = req.params.id as string; // PERBAIKAN: Cast ke string
 
       const result = await service.delete(userId, id);
       res.json(result);

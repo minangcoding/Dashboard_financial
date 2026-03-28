@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
-import { db } from "../db";
-import { assets } from "../db/schema";
+import { eq, and } from "drizzle-orm";
+import { db } from "../db/index.js";
+import { assets } from "../db/schema.js";
 import { v4 as uuidv4 } from 'uuid';
 
 export class AssetService {
@@ -20,14 +20,14 @@ export class AssetService {
     const [newAsset] = await db.insert(assets).values({
       id: uuidv4(),
       userId,
-      assetClass: payload.assetClass,
+      assetClass: payload.assetClass as any,
       name: payload.name,
       ticker: payload.ticker || null,
       balance: payload.balance,
       costBasis: payload.costBasis,
       currentValue: payload.currentValue,
       metadata: payload.metadata || {},
-    }).returning();
+    } as any).returning();
     return newAsset;
   }
 
@@ -38,8 +38,8 @@ export class AssetService {
     const updatePayload = { ...payload, updatedAt: new Date() };
 
     const [updated] = await db.update(assets)
-      .set(updatePayload)
-      .where(eq(assets.id, assetId))
+      .set(updatePayload as any)
+      .where(and(eq(assets.id, assetId), eq(assets.userId, userId)))
       .returning();
     return updated;
   }
@@ -48,7 +48,7 @@ export class AssetService {
     const asset = await this.getById(userId, assetId);
     if (!asset) throw new Error("Asset not found or access denied");
 
-    await db.delete(assets).where(eq(assets.id, assetId));
+    await db.delete(assets).where(and(eq(assets.id, assetId), eq(assets.userId, userId)));
     return { success: true };
   }
 }

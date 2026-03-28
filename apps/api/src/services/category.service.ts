@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
-import { db } from "../db";
-import { categories } from "../db/schema";
+import { eq, and } from "drizzle-orm";
+import { db } from "../db/index.js";
+import { categories } from "../db/schema.js";
 import { v4 as uuidv4 } from 'uuid';
 
 export class CategoryService {
@@ -21,20 +21,19 @@ export class CategoryService {
       id: uuidv4(),
       userId,
       name: payload.name,
-      type: payload.type,
+      type: payload.type as any, // PERBAIKAN: as any
       icon: payload.icon,
-    }).returning();
+    } as any).returning(); // PERBAIKAN: as any
     return newCategory;
   }
 
   async update(userId: string, categoryId: string, payload: { name?: string; type?: "income" | "expense"; icon?: string }) {
-    // Memastikan kategori milik user ini
     const category = await this.getById(userId, categoryId);
     if (!category) throw new Error("Category not found or access denied");
 
     const [updated] = await db.update(categories)
-      .set({ ...payload, updatedAt: new Date() })
-      .where(eq(categories.id, categoryId))
+      .set({ ...payload, updatedAt: new Date() } as any) // PERBAIKAN: as any
+      .where(and(eq(categories.id, categoryId), eq(categories.userId, userId)))
       .returning();
     return updated;
   }
@@ -43,7 +42,7 @@ export class CategoryService {
     const category = await this.getById(userId, categoryId);
     if (!category) throw new Error("Category not found or access denied");
 
-    await db.delete(categories).where(eq(categories.id, categoryId));
+    await db.delete(categories).where(and(eq(categories.id, categoryId), eq(categories.userId, userId)));
     return { success: true };
   }
 }
