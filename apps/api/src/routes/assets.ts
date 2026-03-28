@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { AssetController } from "../controllers/asset.controller";
-import { requireAuth } from "../middlewares/auth.middleware";
+import { AssetController } from "../controllers/asset.controller.js";
+import { requireAuth } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 const controller = new AssetController();

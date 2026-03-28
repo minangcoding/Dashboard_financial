@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db } from "./db";
-import * as schema from "./db/schema";
+import { db } from "./db/index.js"; // PERBAIKAN: Tambahkan /index.js
+import * as schema from "./db/schema.js"; // PERBAIKAN: Tambahkan .js
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -21,5 +21,9 @@ export const auth = betterAuth({
   },
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3001",
-  trustedOrigins: ["http://localhost:5173"] // Support requests from Vite Dev Server
+  // Tambahkan link Vercel kamu di sini agar login diizinkan
+  trustedOrigins: [
+    "http://localhost:5173", 
+    "https://dashboard-financial-api-isc7.vercel.app"
+  ] 
 });

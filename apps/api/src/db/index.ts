@@ -6,16 +6,13 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Gunakan pengecekan agar tidak crash jika env belum masuk
-if (!process.env.DATABASE_URL) {
-  console.error("❌ ERROR: DATABASE_URL tidak ditemukan di Environment Variables!");
-}
-
+// Tambahkan timeout agar server tidak cepat menyerah
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
-    rejectUnauthorized: false // Memaksa koneksi aman di Vercel
-  }
+    rejectUnauthorized: false, // Penting untuk Neon/Supabase di Vercel
+  },
+  connectionTimeoutMillis: 10000, // Tunggu 10 detik sebelum menyerah
 });
 
 export const db = drizzle(pool, { schema });

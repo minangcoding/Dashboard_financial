@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { CategoryController } from "../controllers/category.controller";
-import { requireAuth } from "../middlewares/auth.middleware";
+import { CategoryController } from "../controllers/category.controller.js"; // PERBAIKAN: Tambahkan .js
+import { requireAuth } from "../middlewares/auth.middleware.js"; // PERBAIKAN: Tambahkan .js
 
 const router = Router();
 const controller = new CategoryController();
