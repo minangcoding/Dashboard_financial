@@ -34,7 +34,7 @@ export class AssetController {
   async update(req: Request, res: Response) {
     try {
       const userId = (req as any).user.id;
-      const { id } = req.params;
+      const id = req.params.id as string; // PERBAIKAN: Cast as string
       const payload = req.body;
 
       const data = await service.update(userId, id, payload);
@@ -47,7 +47,7 @@ export class AssetController {
   async delete(req: Request, res: Response) {
     try {
       const userId = (req as any).user.id;
-      const { id } = req.params;
+      const id = req.params.id as string; // PERBAIKAN: Cast as string
 
       const result = await service.delete(userId, id);
       res.json(result);

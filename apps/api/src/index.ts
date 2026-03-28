@@ -2,40 +2,42 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { toNodeHandler } from "better-auth/node";
-import { auth } from './auth';
+import { auth } from './auth.js';
 
-import categoryRoutes from './routes/categories';
-import transactionRoutes from './routes/transactions';
-import assetRoutes from './routes/assets';
-import analyticsRoutes from './routes/analytics';
+import categoryRoutes from './routes/categories.js';
+import transactionRoutes from './routes/transactions.js';
+import assetRoutes from './routes/assets.js';
+import analyticsRoutes from './routes/analytics.js';
+
+import { db } from './db/index.js';
+import { categories, transactions, assets } from './db/schema.js';
+import { v4 as uuidv4 } from 'uuid';
+import { eq } from 'drizzle-orm';
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3001;
 
-// Middlewares
+// --- MIDDLEWARES ---
 app.use(cors({
-  origin: 'http://localhost:5173', // Vite default port
+  origin: ['http://localhost:5173', 'https://dashboard-financial-beta.vercel.app'], // Sesuaikan link Vercel kamu nanti
   credentials: true
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-/**
- * PERBAIKAN DI SINI:
- * Menambahkan 'any' setelah tanda '*' karena versi terbaru path-to-regexp 
- * (yang digunakan Express) mewajibkan wildcard memiliki nama parameter.
- */
+// --- AUTH ROUTE ---
+// Menggunakan *any untuk kompatibilitas path-to-regexp terbaru
 app.all("/api/auth/*any", toNodeHandler(auth));
 
-// Pemasangan REST API (CRUD & Layanan Laporan)
+// --- REST API ROUTES ---
 app.use('/api/categories', categoryRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/assets', assetRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
-// Test Route
+// --- HEALTH CHECK ---
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'ok', 
@@ -44,54 +46,75 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Endpoints
-import { db } from './db';
-import { categories, transactions, assets } from './db/schema';
-import { v4 as uuidv4 } from 'uuid';
-import { eq } from 'drizzle-orm';
-
+// --- SEEDING ENDPOINT ---
+// Digunakan untuk mengisi data awal agar dashboard tidak kosong
 app.post('/api/seed', async (req, res) => {
   try {
-    const sessionUrl = process.env.BETTER_AUTH_URL || "http://localhost:3001";
-    // We will just fetch auth data or require the frontend to pass the user id.
-    // Easier: assume frontend sends userId inside body for this dummy endpoint.
     const { userId } = req.body;
-    if (!userId) return res.status(400).json({error: "Need userId"});
+    if (!userId) return res.status(400).json({ error: "userId wajib diisi di body request" });
 
-    // Check if seeded
+    // Cek apakah user sudah punya data kategori
     const existing = await db.select().from(categories).where(eq(categories.userId, userId));
-    if (existing.length > 0) return res.json({ message: "Sudah di-seed sebelumnya" });
+    if (existing.length > 0) {
+      return res.json({ message: "Data sudah ada (seeded), tidak perlu seed ulang." });
+    }
 
-    // Seeding Categories
+    // 1. Seed Categories
     const dummyCats = [
-      { id: uuidv4(), userId, name: "Gaji Pokok", type: "income", icon: "payments" },
-      { id: uuidv4(), userId, name: "Dividen", type: "income", icon: "monitoring" },
-      { id: uuidv4(), userId, name: "Kebutuhan", type: "expense", icon: "shopping_cart" },
-      { id: uuidv4(), userId, name: "Hiburan", type: "expense", icon: "movie" }
-    ] as const;
+      { id: uuidv4(), userId, name: "Gaji Pokok", type: "income" as any, icon: "payments" },
+      { id: uuidv4(), userId, name: "Dividen", type: "income" as any, icon: "monitoring" },
+      { id: uuidv4(), userId, name: "Operasional", type: "expense" as any, icon: "business" },
+      { id: uuidv4(), userId, name: "Marketing", type: "expense" as any, icon: "campaign" }
+    ];
     await db.insert(categories).values(dummyCats);
 
-    // Seeding Transactions
+    // 2. Seed Transactions
     await db.insert(transactions).values([
-      { id: uuidv4(), userId, categoryId: dummyCats[0].id, date: new Date(), description: "Gaji Bulanan", type: "income", amount: "12500000" },
-      { id: uuidv4(), userId, categoryId: dummyCats[2].id, date: new Date(), description: "Belanja", subDescription: "Supermarket", type: "expense", amount: "3500000" },
-      { id: uuidv4(), userId, categoryId: dummyCats[3].id, date: new Date(Date.now() - 86400000), description: "Tiket Nonton", type: "expense", amount: "150000" },
-    ]);
+      { 
+        id: uuidv4(), 
+        userId, 
+        categoryId: dummyCats[0].id, 
+        date: new Date(), 
+        description: "Injeksi Modal Awal", 
+        type: "income" as any, 
+        amount: "50000000" 
+      },
+      { 
+        id: uuidv4(), 
+        userId, 
+        categoryId: dummyCats[2].id, 
+        date: new Date(), 
+        description: "Sewa Kantor", 
+        subDescription: "Bulanan", 
+        type: "expense" as any, 
+        amount: "5000000" 
+      }
+    ] as any);
 
-    // Seeding Assets
+    // 3. Seed Assets
     await db.insert(assets).values([
-      { id: uuidv4(), userId, assetClass: "cash", name: "Bank Mandiri", ticker: "IDR", balance: "15000000", costBasis: "15000000", currentValue: "15000000" },
-      { id: uuidv4(), userId, assetClass: "investment", name: "S&P 500", ticker: "VOO", balance: "20", costBasis: "2000", currentValue: "2200" }
-    ]);
+      { 
+        id: uuidv4(), 
+        userId, 
+        assetClass: "cash" as any, 
+        name: "Kas Perusahaan", 
+        ticker: "IDR", 
+        balance: "45000000", 
+        costBasis: "45000000", 
+        currentValue: "45000000" 
+      }
+    ] as any);
 
-    res.json({ message: "Seed berhasil untuk " + userId });
+    res.json({ message: "Seed data berhasil dimasukkan untuk user: " + userId });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Setup Server
+// --- START SERVER ---
 app.listen(port, () => {
-  console.log(`[API] Server is running on http://localhost:${port}`);
-  console.log(`[API] Health check: http://localhost:${port}/api/health`);
+  console.log(`-----------------------------------------------`);
+  console.log(`🚀 [API] Server running: http://localhost:${port}`);
+  console.log(`✅ [API] Health check: http://localhost:${port}/api/health`);
+  console.log(`-----------------------------------------------`);
 });
