@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
-import { TransactionService } from "../services/transaction.service";
-import { Parser } from 'json2csv';
+import { TransactionService } from "../services/transaction.service.js";
+import pkg from 'json2csv';
+const { Parser } = pkg;
 
 const service = new TransactionService();
 
@@ -8,7 +9,7 @@ export class TransactionController {
   async getAll(req: Request, res: Response) {
     try {
       const userId = (req as any).user.id;
-      const filters = req.query; // limit, page, type, categoryId, startDate, endDate
+      const filters = req.query; 
       const data = await service.getAll(userId, filters);
       res.json(data);
     } catch (err: any) {
@@ -53,7 +54,7 @@ export class TransactionController {
   async update(req: Request, res: Response) {
     try {
       const userId = (req as any).user.id;
-      const { id } = req.params;
+      const id = req.params.id as string; // PERBAIKAN: Cast ke string
       const payload = req.body;
 
       const data = await service.update(userId, id, payload);
@@ -66,7 +67,7 @@ export class TransactionController {
   async delete(req: Request, res: Response) {
     try {
       const userId = (req as any).user.id;
-      const { id } = req.params;
+      const id = req.params.id as string; // PERBAIKAN: Cast ke string
 
       const result = await service.delete(userId, id);
       res.json(result);
