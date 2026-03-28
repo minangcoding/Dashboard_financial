@@ -11,7 +11,7 @@
     "db:push": "drizzle-kit push"
   },
   "keywords": [],
-  "author": "",
+  "author": "Refido",
   "license": "ISC",
   "devDependencies": {
     "@types/cors": "^2.8.19",
