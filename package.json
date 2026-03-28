@@ -1,0 +1,7 @@
+{
+  "name": "finance-dashboard-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ]
+}
