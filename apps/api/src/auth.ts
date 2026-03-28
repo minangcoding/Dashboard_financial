@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db } from "./db/index.js"; // PERBAIKAN: Tambahkan /index.js
+import { db } from "./db/index.js"; // PERBAIKAN: Harus lengkap ke index.js
 import * as schema from "./db/schema.js"; // PERBAIKAN: Tambahkan .js
 import dotenv from "dotenv";
 
@@ -21,7 +21,7 @@ export const auth = betterAuth({
   },
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3001",
-  // Tambahkan link Vercel kamu di sini agar login diizinkan
+  // Masukkan link Vercel kamu di sini
   trustedOrigins: [
     "http://localhost:5173", 
     "https://dashboard-financial-api-isc7.vercel.app"
